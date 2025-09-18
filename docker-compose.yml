@@ -1,0 +1,11 @@
+services:
+  vue-capacitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vue-capacitor
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./workspace:/workspace
