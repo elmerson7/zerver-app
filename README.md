@@ -65,41 +65,47 @@ cd /app
 npm install
 ```
 
-### Solución de problemas de permisos
-
-Si encuentras errores de permisos al ejecutar comandos, puedes corregirlos con:
-
-```bash
-# Para scripts de Node.js
-chmod -R 755 /app/node_modules/.bin/
-
-# Para scripts de Gradle
-chmod +x /app/android/gradlew
-```
-
 ## Comandos Disponibles
 
-### Desarrollo (dentro del contenedor)
+### Desarrollo
+
+#### Dentro del contenedor:
 ```bash
 npm run dev
 ```
 
-### Compilación para producción (dentro del contenedor)
+### Compilación para producción
+
+#### Dentro del contenedor:
 ```bash
 npm run build
 ```
 
-### Vista previa de la compilación (dentro del contenedor)
+#### Con Docker (desde el host):
+```bash
+docker exec vue-capacitor bash -c "npm run build"
+```
+
+### Vista previa de la compilación
+
+#### Dentro del contenedor:
 ```bash
 npm run preview
 ```
 
-### Compilar para Android (dentro del contenedor)
+### Compilar para Android
+
+#### Dentro del contenedor:
 ```bash
 npm run build
 npx cap sync android
-cd android
-./gradlew assembleDebug
+cd android && ./gradlew assembleDebug
+```
+
+#### Con Docker (desde el host):
+```bash
+docker exec vue-capacitor bash -c "npm run build && npx cap sync android"
+docker exec vue-capacitor bash -c "cd /app/android && ./gradlew assembleDebug"
 ```
 
 ## Flujo de Trabajo de Desarrollo
@@ -128,20 +134,13 @@ npm run dev
    - URL: http://localhost:8019
    - Si estás accediendo desde otra máquina, usa la IP del servidor: http://[IP-del-servidor]:8019
 
-5. Realiza tus cambios en el código fuente.
-
-6. Cuando termines, puedes hacer commit de tus cambios:
-```bash
-# Fuera del contenedor, en la raíz del proyecto
-git add .
-git commit -m "Descripción de los cambios"
-git push
-```
 
 ## Despliegue
 
 ### Generar una APK para Android
-1. Dentro del contenedor, compila la aplicación:
+
+#### Dentro del contenedor:
+1. Compila la aplicación:
 ```bash
 cd /app
 npm run build
@@ -157,25 +156,25 @@ npx cap sync android
 cd android
 ./gradlew assembleDebug
 ```
-   
-   Si encuentras errores de permisos, ejecuta:
-   ```bash
-   chmod +x ./gradlew
-   ```
 
-4. La APK generada estará disponible en: `android/app/build/outputs/apk/debug/app-debug.apk`
-
-### Actualizar la aplicación Android después de cambios
-Cada vez que realices cambios significativos en el código y quieras actualizar la aplicación Android:
-
-1. Compila la aplicación:
+#### Con Docker (desde el host):
 ```bash
-npm run build
+# Compilar y sincronizar
+docker exec vue-capacitor bash -c "cd /app && npm run build && npx cap sync android"
+
+# Generar APK
+docker exec vue-capacitor bash -c "cd /app/android && ./gradlew assembleDebug"
 ```
 
-2. Sincroniza con Android:
+4. La APK generada estará disponible en: `app/android/app/build/outputs/apk/debug/app-debug.apk`
+
+5. Para copiar la APK a la raíz del proyecto (fuera de la carpeta app):
 ```bash
-npx cap sync android
+# Dentro del contenedor
+cp /app/android/app/build/outputs/apk/debug/app-debug.apk /app/..
+
+# O desde el host con Docker
+docker exec vue-capacitor bash -c "cp /app/android/app/build/outputs/apk/debug/app-debug.apk /app/.."
 ```
 
 ## Licencia
