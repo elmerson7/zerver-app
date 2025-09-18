@@ -8,6 +8,6 @@ services:
     stdin_open: true
     tty: true
     ports:
-      - "8019:5173"  # Puerto para el servidor de desarrollo Vite
+      - "8019:8019"  # Puerto para el servidor de desarrollo Vite
     volumes:
       - ./app:/app
