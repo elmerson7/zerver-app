@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: vue-capacitor
-    working_dir: /workspace
+    working_dir: /app
     stdin_open: true
     tty: true
     volumes:
-      - ./workspace:/workspace
+      - ./app:/app

@@ -8,16 +8,21 @@ Zerver App es una aplicación móvil desarrollada con Vue.js y Capacitor para cr
 zerver-app/
 ├── docker-compose.yml    # Configuración de Docker Compose
 ├── Dockerfile            # Configuración del entorno de desarrollo
-└── workspace/
-    └── vue-app/         # Aplicación Vue.js con Capacitor
+└── app/                  # Directorio principal del proyecto
+    ├── public/           # Archivos públicos
+    ├── src/              # Código fuente
+    ├── android/          # Proyecto Android generado por Capacitor
+    └── ...               # Otros archivos de configuración
 ```
 
 ## Requisitos
 - Docker
 - Docker Compose
+- Git
 
 ## Tecnologías Utilizadas
 - Vue.js 3
+- Vite
 - Capacitor 7
 - Node.js 22
 - Android SDK
@@ -28,7 +33,6 @@ El proyecto utiliza Docker para proporcionar un entorno de desarrollo consistent
 1. Node.js 22
 2. Java 21
 3. Android SDK
-4. Vue CLI
 
 ## Instalación
 
@@ -48,34 +52,55 @@ docker-compose up -d
 docker exec -it vue-capacitor bash
 ```
 
-4. Instala las dependencias:
+4. Dentro del contenedor, crea un nuevo proyecto Vue con Vite:
 ```bash
-cd vue-app
+cd /app
+npm create vite@latest . -- --template vue
+```
+
+5. Instala las dependencias:
+```bash
 npm install
+```
+
+6. Instala Capacitor:
+```bash
+npm install @capacitor/core @capacitor/cli
+npx cap init [nombre-app] [id-app] --web-dir=dist
+```
+
+7. Añade la plataforma Android:
+```bash
+npm install @capacitor/android
+npx cap add android
 ```
 
 ## Comandos Disponibles
 
-### Desarrollo
+### Desarrollo (dentro del contenedor)
 ```bash
-npm run serve
+npm run dev
 ```
 
-### Compilación para producción
+### Compilación para producción (dentro del contenedor)
 ```bash
 npm run build
 ```
 
-### Linting
+### Vista previa de la compilación (dentro del contenedor)
 ```bash
-npm run lint
+npm run preview
 ```
 
-### Compilar para Android
+### Compilar para Android (dentro del contenedor)
 ```bash
+npm run build
 npx cap sync android
 npx cap open android
 ```
+
+## Control de Versiones
+Todo el código del proyecto se encuentra en la carpeta `app/` y está configurado para ser versionado con Git. Se ha incluido un archivo `.gitignore` para excluir archivos innecesarios.
 
 ## Despliegue
 Para generar una APK para Android:

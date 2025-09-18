@@ -32,4 +32,4 @@ RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools \
 RUN yes | sdkmanager --licenses \
     && sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-WORKDIR /workspace
+WORKDIR /app
