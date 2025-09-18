@@ -1,0 +1,5 @@
+{
+  "appId": "com.zerver.app",
+  "appName": "zerver-app",
+  "webDir": "dist"
+}

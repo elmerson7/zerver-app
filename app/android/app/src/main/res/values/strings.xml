@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">zerver-app</string>
+    <string name="title_activity_main">zerver-app</string>
+    <string name="package_name">com.zerver.app</string>
+    <string name="custom_url_scheme">com.zerver.app</string>
+</resources>

@@ -1,11 +1,20 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
 # Dependencias
 node_modules
-npm-debug.log
-yarn-debug.log
-yarn-error.log
+.pnp
+.pnp.js
 
 # Archivos de compilación
 /dist
+dist-ssr
 /android/app/build
 /android/.gradle
 /android/build
@@ -15,24 +24,31 @@ yarn-error.log
 /android/*.iml
 
 # Archivos de entorno local
+.env
 .env.local
 .env.*.local
 
-# Archivos de registro
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Archivos del editor
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
 .idea
-.vscode
+.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Archivos del sistema operativo
-.DS_Store
-Thumbs.db
+# Testing
+/coverage
+
+# Capacitor
+capacitor-cordova-android-plugins
+app/src/main/assets/public
+app/src/main/assets/capacitor.config.json
+app/src/main/assets/capacitor.plugins.json
+app/src/main/res/xml/config.xml
+
+# Archivos temporales
+.tmp
+.temp
