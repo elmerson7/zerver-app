@@ -7,5 +7,7 @@ services:
     working_dir: /app
     stdin_open: true
     tty: true
+    ports:
+      - "8019:5173"  # Puerto para el servidor de desarrollo Vite
     volumes:
       - ./app:/app
