@@ -21,8 +21,8 @@ onMounted(async () => {
 const startNotifications = async () => {
   if (notificationsActive.value) return
   
-  // Iniciar notificaciones persistentes
-  const success = NotificationService.startPersistentNotifications(
+  // Usar el servicio de notificaciones normal
+  const success = NotificationService.startPeriodicNotifications(
     notificationTitle.value,
     notificationBody.value,
     notificationInterval.value
@@ -115,11 +115,13 @@ const updateInterval = () => {
   border: 1px solid #ddd;
   border-radius: 8px;
   background-color: #f9f9f9;
+  color: #333;
 }
 
 .status {
   font-weight: bold;
   margin-bottom: 15px;
+  color: #333;
 }
 
 .form-group {
@@ -132,6 +134,7 @@ const updateInterval = () => {
 .form-group label {
   margin-bottom: 5px;
   font-weight: bold;
+  color: #333;
 }
 
 .form-group input {
