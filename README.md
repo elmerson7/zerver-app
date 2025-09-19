@@ -171,7 +171,7 @@ docker exec vue-capacitor bash -c "cd /app/android && ./gradlew assembleDebug"
 5. Para copiar la APK a la raíz del proyecto (fuera de la carpeta app):
 ```bash
 # Desde el host con Docker
-docker cp vue-capacitor:/app-debug.apk /var/www/html/zerver-app/
+docker cp vue-capacitor:/app/android/app/build/outputs/apk/debug/app-debug.apk /var/www/html/zerver-app/
 ```
 
 ## Licencia

@@ -69,13 +69,31 @@ class NotificationService {
     if (this.intervalId) {
       this.stopPeriodicNotifications();
     }
+    
+    // Función para obtener la hora actual formateada
+    const getFormattedTime = () => {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const formattedHours = hours % 12 || 12;
+      const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+      const formattedSeconds = seconds < 10 ? `0${seconds}` : seconds;
+      return `${formattedHours}:${formattedMinutes}:${formattedSeconds} ${ampm}`;
+    };
+    
+    // Crear el cuerpo de la notificación con la hora
+    const createNotificationBody = () => {
+      return `${body}\nA las ${getFormattedTime()}`;
+    };
 
     // Primera notificación inmediata
-    this.scheduleNotification(title, body, 1);
+    this.scheduleNotification(title, createNotificationBody(), 1);
 
     // Programar notificaciones periódicas
     this.intervalId = setInterval(() => {
-      this.scheduleNotification(title, body, 1);
+      this.scheduleNotification(title, createNotificationBody(), 1);
     }, intervalSeconds * 1000);
 
     console.log(`Notificaciones periódicas iniciadas cada ${intervalSeconds} segundos`);
@@ -152,13 +170,31 @@ class NotificationService {
     if (this.intervalId) {
       this.stopPeriodicNotifications();
     }
+    
+    // Función para obtener la hora actual formateada
+    const getFormattedTime = () => {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const formattedHours = hours % 12 || 12;
+      const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+      const formattedSeconds = seconds < 10 ? `0${seconds}` : seconds;
+      return `${formattedHours}:${formattedMinutes}:${formattedSeconds} ${ampm}`;
+    };
+    
+    // Crear el cuerpo de la notificación con la hora
+    const createNotificationBody = () => {
+      return `${body}\nA las ${getFormattedTime()}`;
+    };
 
     // Primera notificación inmediata
-    this.scheduleHighPriorityNotification(title, body, 1);
+    this.scheduleHighPriorityNotification(title, createNotificationBody(), 1);
 
     // Programar notificaciones periódicas de alta prioridad
     this.intervalId = setInterval(() => {
-      this.scheduleHighPriorityNotification(title, body, 1);
+      this.scheduleHighPriorityNotification(title, createNotificationBody(), 1);
     }, intervalSeconds * 1000);
 
     console.log(`Notificaciones persistentes iniciadas cada ${intervalSeconds} segundos`);
