@@ -9,7 +9,7 @@ class StorageService {
   getUserId() {
     let userId = localStorage.getItem(this.USER_ID_KEY);
     if (!userId) {
-      userId = 'user_' + this.generateUniqueId();
+      userId = 'U_' + this.generateUniqueId();
       localStorage.setItem(this.USER_ID_KEY, userId);
     }
     return userId;
@@ -19,7 +19,7 @@ class StorageService {
   getDeviceId() {
     let deviceId = localStorage.getItem(this.DEVICE_ID_KEY);
     if (!deviceId) {
-      deviceId = 'device_' + this.generateUniqueId();
+      deviceId = 'D_' + this.generateUniqueId();
       localStorage.setItem(this.DEVICE_ID_KEY, deviceId);
     }
     return deviceId;

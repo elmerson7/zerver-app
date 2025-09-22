@@ -17,7 +17,7 @@ const loadInstances = async () => {
     const data = await ApiService.fetchInstances();
     instances.value = data;
   } catch (err) {
-    error.value = 'Error al cargar las instancias. Intente nuevamente.';
+    error.value = `Error al cargar las instancias: ${err.message}`;
     console.error('Error al cargar instancias:', err);
   } finally {
     loading.value = false;
@@ -34,7 +34,7 @@ const refreshInstances = async () => {
     const data = await ApiService.fetchInstances();
     instances.value = data;
   } catch (err) {
-    error.value = 'Error al actualizar las instancias.';
+    error.value = `Error al actualizar las instancias: ${err.message}`;
     console.error('Error al actualizar instancias:', err);
   } finally {
     refreshing.value = false;
@@ -47,11 +47,12 @@ const startInstance = async (instanceId) => {
   
   try {
     actionInProgress.value = instanceId;
+    error.value = '';
     await ApiService.startInstance(instanceId);
     // Actualizar la instancia en la lista
     await refreshInstances();
   } catch (err) {
-    error.value = `Error al iniciar la instancia ${instanceId}.`;
+    error.value = `Error al iniciar la instancia ${instanceId}: ${err.message}`;
     console.error(`Error al iniciar instancia ${instanceId}:`, err);
   } finally {
     actionInProgress.value = null;
@@ -64,15 +65,21 @@ const stopInstance = async (instanceId) => {
   
   try {
     actionInProgress.value = instanceId;
+    error.value = '';
     await ApiService.stopInstance(instanceId);
     // Actualizar la instancia en la lista
     await refreshInstances();
   } catch (err) {
-    error.value = `Error al detener la instancia ${instanceId}.`;
+    error.value = `Error al detener la instancia ${instanceId}: ${err.message}`;
     console.error(`Error al detener instancia ${instanceId}:`, err);
   } finally {
     actionInProgress.value = null;
   }
+};
+
+// Limpiar error
+const clearError = () => {
+  error.value = '';
 };
 
 // Cargar instancias al montar el componente
@@ -94,7 +101,8 @@ onMounted(loadInstances);
     </div>
     
     <div v-if="error" class="error-message">
-      {{ error }}
+      <div class="error-content">{{ error }}</div>
+      <button class="error-close" @click="clearError">×</button>
     </div>
     
     <div v-if="loading && !refreshing" class="loading-container">
@@ -182,6 +190,23 @@ onMounted(loadInstances);
   border-radius: 8px;
   margin-bottom: 16px;
   font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-content {
+  flex: 1;
+}
+
+.error-close {
+  background: none;
+  border: none;
+  color: #c62828;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0 8px;
+  margin: -8px;
 }
 
 .loading-container {
