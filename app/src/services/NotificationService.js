@@ -1,14 +1,17 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
+import StorageService from './StorageService.js';
+import ApiService from './ApiService.js';
 
 class NotificationService {
   constructor() {
     this.notificationId = 1;
     this.intervalId = null;
     this.initialized = false;
+    this.activePings = new Map(); // Para almacenar los pings activos
   }
 
   async initialize() {
-    if (this.initialized) return;
+    if (this.initialized) return true;
 
     try {
       // Solicitar permisos para notificaciones
@@ -24,8 +27,11 @@ class NotificationService {
         console.log('Notificación recibida:', notification);
       });
 
-      LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
-        console.log('Acción realizada en notificación:', notification);
+      LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
+        console.log('Acción realizada en notificación:', notificationAction);
+        
+        // Procesar acciones de notificación
+        this.handleNotificationAction(notificationAction);
       });
 
       this.initialized = true;
@@ -36,169 +42,204 @@ class NotificationService {
     }
   }
 
-  async scheduleNotification(title, body, seconds = 5) {
+  // Manejar acciones de notificación
+  async handleNotificationAction(notificationAction) {
+    const { notification } = notificationAction;
+    const { id, actionId, extra } = notification;
+    
+    if (!extra || !extra.instanceId || !extra.tickIso) return;
+    
+    const { instanceId, tickIso } = extra;
+    const userId = StorageService.getUserId();
+    
+    try {
+      if (actionId === 'confirm') {
+        // Confirmar uso de la instancia
+        await ApiService.confirmUse(instanceId, userId, tickIso, 'use');
+        console.log(`Uso confirmado para instancia ${instanceId}`);
+      } else if (actionId === 'stop') {
+        // Confirmar que puede detenerse
+        await ApiService.confirmUse(instanceId, userId, tickIso, 'stop');
+        console.log(`Detención confirmada para instancia ${instanceId}`);
+      }
+      
+      // Eliminar el ping del mapa de pings activos
+      this.activePings.delete(`${instanceId}-${tickIso}`);
+    } catch (error) {
+      console.error('Error al procesar acción de notificación:', error);
+    }
+  }
+
+  // Programar notificación con acciones
+  async scheduleActionableNotification(instanceId, instanceName, tickIso, graceMinutes) {
+    if (!this.initialized) {
+      const success = await this.initialize();
+      if (!success) return false;
+    }
+
+    const pingKey = `${instanceId}-${tickIso}`;
+    if (this.activePings.has(pingKey)) {
+      console.log(`Ya existe una notificación para el ping ${pingKey}`);
+      return true;
+    }
+
+    try {
+      // Calcular tiempo de gracia
+      const graceEndsAt = new Date(new Date().getTime() + graceMinutes * 60 * 1000);
+      const formattedTime = this.formatTime(graceEndsAt);
+      
+      // Crear notificación con acciones
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            title: `¿Sigues usando ${instanceName || instanceId}?`,
+            body: `La instancia se apagará automáticamente a las ${formattedTime} si nadie confirma su uso.`,
+            id: this.notificationId++,
+            schedule: { at: new Date() },
+            sound: 'default',
+            actionTypeId: 'EC2_ACTIONS',
+            extra: {
+              instanceId,
+              tickIso,
+              graceEndsAt: graceEndsAt.toISOString()
+            }
+          },
+        ],
+      });
+
+      // Registrar el ping activo
+      this.activePings.set(pingKey, {
+        instanceId,
+        tickIso,
+        graceEndsAt,
+        notificationSent: true
+      });
+
+      // Registrar acciones de notificación (solo una vez)
+      if (!this.actionsRegistered) {
+        await LocalNotifications.registerActionTypes({
+          types: [
+            {
+              id: 'EC2_ACTIONS',
+              actions: [
+                {
+                  id: 'confirm',
+                  title: 'Sigo usándola'
+                },
+                {
+                  id: 'stop',
+                  title: 'Puede apagarse'
+                }
+              ]
+            }
+          ]
+        });
+        this.actionsRegistered = true;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error al programar notificación con acciones:', error);
+      return false;
+    }
+  }
+
+  // Programar recordatorio para un ping existente
+  async scheduleReminder(pingData) {
     if (!this.initialized) {
       const success = await this.initialize();
       if (!success) return false;
     }
 
     try {
+      const { instanceId, instanceName, tickIso, graceEndsAt } = pingData;
+      const now = new Date();
+      const graceEndsAtDate = new Date(graceEndsAt);
+      
+      // Si ya pasó el tiempo de gracia, no enviar recordatorio
+      if (graceEndsAtDate <= now) return false;
+      
+      // Calcular tiempo restante en minutos
+      const remainingMinutes = Math.ceil((graceEndsAtDate - now) / (60 * 1000));
+      
       await LocalNotifications.schedule({
         notifications: [
           {
-            title: title,
-            body: body,
+            title: `RECORDATORIO: ¿Sigues usando ${instanceName || instanceId}?`,
+            body: `Quedan ${remainingMinutes} minutos antes del apagado automático.`,
             id: this.notificationId++,
-            schedule: { at: new Date(Date.now() + seconds * 1000) },
+            schedule: { at: new Date() },
             sound: 'default',
-            attachments: null,
-            actionTypeId: '',
-            extra: null,
+            actionTypeId: 'EC2_ACTIONS',
+            extra: {
+              instanceId,
+              tickIso,
+              graceEndsAt
+            }
           },
         ],
       });
+
       return true;
     } catch (error) {
-      console.error('Error al programar notificación:', error);
+      console.error('Error al programar recordatorio:', error);
       return false;
     }
   }
 
-  // Iniciar notificaciones periódicas cada X segundos
-  startPeriodicNotifications(title, body, intervalSeconds = 120) {
-    if (this.intervalId) {
-      this.stopPeriodicNotifications();
-    }
-    
-    // Función para obtener la hora actual formateada
-    const getFormattedTime = () => {
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const seconds = now.getSeconds();
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      const formattedHours = hours % 12 || 12;
-      const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-      const formattedSeconds = seconds < 10 ? `0${seconds}` : seconds;
-      return `${formattedHours}:${formattedMinutes}:${formattedSeconds} ${ampm}`;
-    };
-    
-    // Crear el cuerpo de la notificación con la hora
-    const createNotificationBody = () => {
-      return `${body}\nA las ${getFormattedTime()}`;
-    };
-
-    // Primera notificación inmediata
-    this.scheduleNotification(title, createNotificationBody(), 1);
-
-    // Programar notificaciones periódicas
-    this.intervalId = setInterval(() => {
-      this.scheduleNotification(title, createNotificationBody(), 1);
-    }, intervalSeconds * 1000);
-
-    console.log(`Notificaciones periódicas iniciadas cada ${intervalSeconds} segundos`);
-    return true;
+  // Formatear hora en formato legible
+  formatTime(date) {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const formattedHours = hours % 12 || 12;
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    return `${formattedHours}:${formattedMinutes} ${ampm}`;
   }
 
-  // Detener notificaciones periódicas
-  stopPeriodicNotifications() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-      console.log('Notificaciones periódicas detenidas');
-      return true;
-    }
-    return false;
+  // Verificar si hay pings activos que necesitan recordatorio
+  checkForReminders() {
+    const now = new Date();
+    
+    this.activePings.forEach((pingData, key) => {
+      const { graceEndsAt, lastReminderAt } = pingData;
+      const graceEndsAtDate = new Date(graceEndsAt);
+      
+      // Si ya pasó el tiempo de gracia, eliminar el ping
+      if (graceEndsAtDate <= now) {
+        this.activePings.delete(key);
+        return;
+      }
+      
+      // Enviar recordatorio cada minuto, pero no más frecuente que cada 60 segundos
+      const shouldSendReminder = !lastReminderAt || 
+        (now - new Date(lastReminderAt)) >= 60000;
+      
+      if (shouldSendReminder) {
+        this.scheduleReminder(pingData);
+        pingData.lastReminderAt = now.toISOString();
+      }
+    });
   }
 
-  // Crear una notificación con canal de alta prioridad (para Android)
-  async createHighPriorityChannel() {
-    if (!this.initialized) {
-      await this.initialize();
+  // Iniciar verificación periódica de recordatorios
+  startReminderCheck() {
+    if (this.reminderIntervalId) {
+      clearInterval(this.reminderIntervalId);
     }
-
-    try {
-      await LocalNotifications.createChannel({
-        id: 'persistent-notifications',
-        name: 'Notificaciones Persistentes',
-        description: 'Canal para notificaciones que deben persistir',
-        importance: 4, // HIGH: muestra en todas partes, hace sonido y puede aparecer como heads-up
-        visibility: 1, // PUBLIC: visible en pantalla de bloqueo
-        lights: true,
-        vibration: true,
-        sound: 'default',
-      });
-      console.log('Canal de alta prioridad creado');
-      return true;
-    } catch (error) {
-      console.error('Error al crear canal de notificaciones:', error);
-      return false;
-    }
+    
+    // Verificar cada 30 segundos
+    this.reminderIntervalId = setInterval(() => {
+      this.checkForReminders();
+    }, 30000);
   }
 
-  // Programar notificación con alta prioridad
-  async scheduleHighPriorityNotification(title, body, seconds = 5) {
-    await this.createHighPriorityChannel();
-    
-    try {
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            title: title,
-            body: body,
-            id: this.notificationId++,
-            schedule: { at: new Date(Date.now() + seconds * 1000) },
-            channelId: 'persistent-notifications',
-            sound: 'default',
-            ongoing: true, // Hace que la notificación sea persistente (solo Android)
-            autoCancel: false, // Evita que se cancele al tocarla
-            attachments: null,
-            actionTypeId: '',
-            extra: null,
-          },
-        ],
-      });
-      return true;
-    } catch (error) {
-      console.error('Error al programar notificación de alta prioridad:', error);
-      return false;
+  // Detener verificación periódica de recordatorios
+  stopReminderCheck() {
+    if (this.reminderIntervalId) {
+      clearInterval(this.reminderIntervalId);
+      this.reminderIntervalId = null;
     }
-  }
-
-  // Iniciar notificaciones persistentes de alta prioridad
-  startPersistentNotifications(title, body, intervalSeconds = 120) {
-    if (this.intervalId) {
-      this.stopPeriodicNotifications();
-    }
-    
-    // Función para obtener la hora actual formateada
-    const getFormattedTime = () => {
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const seconds = now.getSeconds();
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      const formattedHours = hours % 12 || 12;
-      const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-      const formattedSeconds = seconds < 10 ? `0${seconds}` : seconds;
-      return `${formattedHours}:${formattedMinutes}:${formattedSeconds} ${ampm}`;
-    };
-    
-    // Crear el cuerpo de la notificación con la hora
-    const createNotificationBody = () => {
-      return `${body}\nA las ${getFormattedTime()}`;
-    };
-
-    // Primera notificación inmediata
-    this.scheduleHighPriorityNotification(title, createNotificationBody(), 1);
-
-    // Programar notificaciones periódicas de alta prioridad
-    this.intervalId = setInterval(() => {
-      this.scheduleHighPriorityNotification(title, createNotificationBody(), 1);
-    }, intervalSeconds * 1000);
-
-    console.log(`Notificaciones persistentes iniciadas cada ${intervalSeconds} segundos`);
-    return true;
   }
 }
 

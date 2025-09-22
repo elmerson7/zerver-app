@@ -1,5 +1,18 @@
 {
-  "appId": "com.zerver.app",
-  "appName": "zerver-app",
-  "webDir": "dist"
+  "appId": "com.zerver.ec2control",
+  "appName": "EC2 Control",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#4CAF50",
+      "sound": "beep.wav"
+    }
+  },
+  "android": {
+    "backgroundColor": "#4CAF50"
+  }
 }
