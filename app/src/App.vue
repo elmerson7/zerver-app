@@ -71,6 +71,7 @@ const stopMonitoring = () => {
 <template>
   <div class="app-container">
     <header class="app-header">
+      <div class="status-bar"></div>
       <h1 class="app-title">EC2 Control</h1>
       <div class="monitoring-status" :class="{ active: monitoringActive }">
         {{ monitoringActive ? 'Monitoreo activo' : 'Monitoreo inactivo' }}
@@ -78,25 +79,6 @@ const stopMonitoring = () => {
     </header>
     
     <main class="app-content">
-      <div class="tab-container">
-        <button 
-          class="tab-button" 
-          :class="{ active: activeTab === 'instances' }"
-          @click="switchTab('instances')"
-        >
-          <span class="tab-icon">📊</span>
-          Instancias
-        </button>
-        <button 
-          class="tab-button" 
-          :class="{ active: activeTab === 'settings' }"
-          @click="switchTab('settings')"
-        >
-          <span class="tab-icon">⚙️</span>
-          Configuración
-        </button>
-      </div>
-      
       <div class="tab-content">
         <InstanceList v-if="activeTab === 'instances'" />
         <SettingsPanel v-if="activeTab === 'settings'" />
@@ -122,11 +104,30 @@ const stopMonitoring = () => {
       </div>
     </main>
     
-    <footer class="app-footer">
-      <p>© 2025 EC2 Control App</p>
-    </footer>
+    <nav class="bottom-tabs">
+      <button 
+        class="tab-button" 
+        :class="{ active: activeTab === 'instances' }"
+        @click="switchTab('instances')"
+      >
+        <span class="tab-icon material-icon">dashboard</span>
+        <span class="tab-label">Instancias</span>
+      </button>
+      <button 
+        class="tab-button" 
+        :class="{ active: activeTab === 'settings' }"
+        @click="switchTab('settings')"
+      >
+        <span class="tab-icon material-icon">settings</span>
+        <span class="tab-label">Configuración</span>
+      </button>
+    </nav>
   </div>
 </template>
+
+<style>
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+</style>
 
 <style scoped>
 .app-container {
@@ -139,7 +140,7 @@ const stopMonitoring = () => {
 
 .app-header {
   background-color: var(--color-primary);
-  padding: 1rem;
+  height: 64px;
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
@@ -148,84 +149,117 @@ const stopMonitoring = () => {
   position: sticky;
   top: 0;
   z-index: 100;
-  gap: 8px;
+  padding: 0;
+}
+
+.status-bar {
+  width: 100%;
+  height: 24px; /* Espacio para la barra de estado del móvil */
 }
 
 .app-title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 500;
   color: white;
   text-align: center;
+  letter-spacing: 0.5px;
 }
 
 .monitoring-status {
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.2);
   color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.4px;
 }
 
 .monitoring-status.active {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .app-content {
   flex: 1;
-  padding: 1rem;
+  padding: 8px 12px;
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
   box-sizing: border-box;
-}
-
-.tab-container {
-  display: flex;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.tab-button {
-  padding: 12px 20px;
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-text-light);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
-}
-
-.tab-button.active {
-  color: var(--color-primary-light);
-  border-bottom-color: var(--color-primary);
-}
-
-.tab-icon {
-  font-size: 1.2rem;
+  margin-bottom: 56px; /* Espacio para la barra de navegación inferior */
 }
 
 .tab-content {
-  padding: 10px 0;
+  padding: 4px 0;
+}
+
+/* Barra de navegación inferior */
+.bottom-tabs {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background-color: var(--color-background-alt);
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.tab-button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--color-text-light);
+  font-size: 0.75rem;
+  padding: 8px 0;
+  transition: color 0.2s;
+  position: relative;
+}
+
+.tab-button.active {
+  color: var(--color-primary);
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 2px;
+  background-color: var(--color-primary);
+  border-radius: 1px;
+}
+
+.tab-icon.material-icon {
+  font-family: 'Material Icons';
+  font-size: 24px;
+  margin-bottom: 2px;
+}
+
+.tab-label {
+  font-size: 0.7rem;
+  font-weight: 500;
 }
 
 .monitoring-controls {
-  margin-top: 20px;
+  margin-top: 16px;
   display: flex;
   justify-content: center;
 }
 
 .monitoring-button {
-  padding: 12px 24px;
+  padding: 12px 20px;
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -234,6 +268,10 @@ const stopMonitoring = () => {
   transition: all 0.2s;
   width: 100%;
   max-width: 300px;
+  height: 48px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .start-button {
@@ -258,57 +296,43 @@ const stopMonitoring = () => {
   font-size: 0.9rem;
 }
 
-.app-footer {
-  background-color: var(--color-background-alt);
-  padding: 1rem;
-  text-align: center;
-  font-size: 0.9rem;
-  color: var(--color-text-light);
-  border-top: 1px solid var(--color-border);
-}
-
-/* Responsive styles */
 @media (max-width: 768px) {
   .app-content {
-    padding: 0.8rem;
-  }
-  
-  .tab-button {
-    padding: 10px 16px;
-    font-size: 0.95rem;
+    padding: 8px;
   }
   
   .monitoring-button {
-    padding: 10px 20px;
-    font-size: 0.95rem;
+    padding: 10px 16px;
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 480px) {
   .app-header {
-    padding: 0.8rem;
+    height: 56px;
   }
   
   .app-title {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
   }
   
   .app-content {
-    padding: 0.6rem;
-  }
-  
-  .tab-button {
-    padding: 8px 12px;
-    font-size: 0.9rem;
-  }
-  
-  .tab-icon {
-    font-size: 1rem;
+    padding: 4px 8px;
   }
   
   .monitoring-button {
     padding: 8px 16px;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
+    height: 44px;
   }
+}
+
+/* Animaciones de transición entre pestañas */
+.tab-content {
+  position: relative;
+}
+
+.tab-content > * {
+  transition: opacity 0.3s, transform 0.3s;
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup>
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, ref } from 'vue';
 
 const props = defineProps({
   instance: {
@@ -13,6 +13,10 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['start', 'stop']);
+const touchStart = ref(null);
+const showRipple = ref(false);
+const rippleX = ref(0);
+const rippleY = ref(0);
 
 const handleAction = (action) => {
   if (props.loading) return;
@@ -32,19 +36,46 @@ const getStatusColor = (state) => {
       return '#9E9E9E';
   }
 };
+
+const onTouchStart = (e) => {
+  touchStart.value = {
+    x: e.touches[0].clientX,
+    y: e.touches[0].clientY
+  };
+  
+  // Mostrar efecto ripple
+  rippleX.value = e.touches[0].clientX - e.currentTarget.getBoundingClientRect().left;
+  rippleY.value = e.touches[0].clientY - e.currentTarget.getBoundingClientRect().top;
+  showRipple.value = true;
+};
+
+const onTouchEnd = () => {
+  touchStart.value = null;
+  setTimeout(() => {
+    showRipple.value = false;
+  }, 300);
+};
 </script>
 
 <template>
-  <div class="instance-item" :class="{ 'is-loading': loading }">
+  <div 
+    class="instance-item" 
+    :class="{ 'is-loading': loading }"
+    @touchstart="onTouchStart"
+    @touchend="onTouchEnd"
+  >
+    <div class="ripple" v-if="showRipple" :style="{ left: rippleX + 'px', top: rippleY + 'px' }"></div>
+    
     <div class="instance-info">
       <div class="instance-name">{{ instance.name || 'Sin nombre' }}</div>
       <div class="instance-id">{{ instance.id }}</div>
-      <div class="instance-region">{{ instance.region }}</div>
+      
       <div class="instance-status">
         <span class="status-indicator" :style="{ backgroundColor: getStatusColor(instance.state) }"></span>
         <span class="status-text">{{ instance.state }}</span>
       </div>
     </div>
+    
     <div class="instance-actions">
       <button 
         v-if="instance.state.toLowerCase() === 'stopped'" 
@@ -52,35 +83,64 @@ const getStatusColor = (state) => {
         @click="handleAction('start')"
         :disabled="loading"
       >
-        <span class="button-icon">▶</span>
-        Iniciar
+        <span class="material-icons">play_arrow</span>
+        <span class="button-text">Iniciar</span>
       </button>
+      
       <button 
         v-if="instance.state.toLowerCase() === 'running'" 
         class="action-button stop-button" 
         @click="handleAction('stop')"
         :disabled="loading"
       >
-        <span class="button-icon">■</span>
-        Detener
+        <span class="material-icons">stop</span>
+        <span class="button-text">Detener</span>
       </button>
+      
       <div v-if="loading" class="loading-spinner"></div>
     </div>
   </div>
 </template>
 
+<style>
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+</style>
+
 <style scoped>
 .instance-item {
   background-color: var(--color-card);
-  border-radius: 8px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--color-border);
-  padding: 16px;
-  margin-bottom: 16px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  margin-bottom: 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.2s;
+}
+
+.instance-item:active {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.ripple {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple-effect 0.6s linear;
+  pointer-events: none;
+}
+
+@keyframes ripple-effect {
+  to {
+    transform: scale(40);
+    opacity: 0;
+  }
 }
 
 .instance-item.is-loading {
@@ -89,26 +149,27 @@ const getStatusColor = (state) => {
 
 .instance-info {
   flex: 1;
+  min-width: 0;
 }
 
 .instance-name {
-  font-weight: 600;
-  font-size: 1.1rem;
-  margin-bottom: 4px;
+  font-weight: 500;
+  font-size: 1rem;
+  margin-bottom: 2px;
   color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .instance-id {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--color-text-light);
   font-family: monospace;
   margin-bottom: 4px;
-}
-
-.instance-region {
-  font-size: 0.85rem;
-  color: var(--color-text-light);
-  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .instance-status {
@@ -117,15 +178,16 @@ const getStatusColor = (state) => {
 }
 
 .status-indicator {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   margin-right: 6px;
 }
 
 .status-text {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 500;
+  text-transform: lowercase;
 }
 
 .instance-actions {
@@ -134,21 +196,30 @@ const getStatusColor = (state) => {
 }
 
 .action-button {
-  padding: 8px 16px;
+  min-width: 88px;
+  height: 36px;
   border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  padding: 0 12px;
 }
 
-.button-icon {
-  font-size: 0.8rem;
+.material-icons {
+  font-size: 18px;
+}
+
+.button-text {
+  font-size: 0.75rem;
 }
 
 .start-button {
@@ -156,7 +227,7 @@ const getStatusColor = (state) => {
   color: white;
 }
 
-.start-button:hover:not(:disabled) {
+.start-button:active {
   background-color: var(--color-primary-dark);
 }
 
@@ -165,7 +236,7 @@ const getStatusColor = (state) => {
   color: white;
 }
 
-.stop-button:hover:not(:disabled) {
+.stop-button:active {
   background-color: var(--color-secondary-dark);
 }
 
@@ -191,18 +262,21 @@ const getStatusColor = (state) => {
 
 @media (max-width: 600px) {
   .instance-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .instance-actions {
-    margin-top: 12px;
-    align-self: flex-end;
+    padding: 10px;
   }
   
   .action-button {
-    padding: 6px 12px;
-    font-size: 0.8rem;
+    min-width: 72px;
+    height: 32px;
+    padding: 0 8px;
+  }
+  
+  .material-icons {
+    font-size: 16px;
+  }
+  
+  .button-text {
+    font-size: 0.7rem;
   }
 }
 </style>

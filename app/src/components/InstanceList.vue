@@ -8,6 +8,9 @@ const loading = ref(true);
 const error = ref('');
 const refreshing = ref(false);
 const actionInProgress = ref(null);
+const pullRefreshActive = ref(false);
+const pullStartY = ref(0);
+const pullMoveY = ref(0);
 
 // Cargar instancias
 const loadInstances = async () => {
@@ -38,6 +41,8 @@ const refreshInstances = async () => {
     console.error('Error al actualizar instancias:', err);
   } finally {
     refreshing.value = false;
+    pullRefreshActive.value = false;
+    pullMoveY.value = 0;
   }
 };
 
@@ -82,12 +87,59 @@ const clearError = () => {
   error.value = '';
 };
 
+// Pull to refresh
+const onTouchStart = (e) => {
+  if (window.scrollY === 0) {
+    pullStartY.value = e.touches[0].clientY;
+    pullRefreshActive.value = true;
+  }
+};
+
+const onTouchMove = (e) => {
+  if (!pullRefreshActive.value) return;
+  
+  const touchY = e.touches[0].clientY;
+  const diff = touchY - pullStartY.value;
+  
+  if (diff > 0) {
+    // Resistencia al deslizamiento (no lineal)
+    pullMoveY.value = Math.min(80, Math.pow(diff, 0.8));
+    e.preventDefault(); // Prevenir scroll
+  }
+};
+
+const onTouchEnd = () => {
+  if (pullRefreshActive.value && pullMoveY.value > 50) {
+    // Si se ha tirado lo suficiente, actualizar
+    refreshInstances();
+  } else {
+    // Si no, restaurar posición
+    pullRefreshActive.value = false;
+    pullMoveY.value = 0;
+  }
+};
+
 // Cargar instancias al montar el componente
 onMounted(loadInstances);
 </script>
 
 <template>
-  <div class="instance-list-container">
+  <div 
+    class="instance-list-container"
+    @touchstart="onTouchStart"
+    @touchmove="onTouchMove"
+    @touchend="onTouchEnd"
+  >
+    <div 
+      class="pull-indicator" 
+      v-if="pullRefreshActive" 
+      :style="{ height: pullMoveY + 'px' }"
+    >
+      <div class="pull-spinner" :class="{ 'is-refreshing': refreshing }">
+        <span class="material-icons">refresh</span>
+      </div>
+    </div>
+    
     <div class="list-header">
       <h2 class="list-title">Instancias EC2</h2>
       <button 
@@ -95,14 +147,16 @@ onMounted(loadInstances);
         @click="refreshInstances" 
         :disabled="refreshing || loading"
       >
-        <span class="refresh-icon" :class="{ 'is-refreshing': refreshing }">↻</span>
-        <span>{{ refreshing ? 'Actualizando...' : 'Actualizar' }}</span>
+        <span class="material-icons" :class="{ 'is-refreshing': refreshing }">refresh</span>
+        <span class="button-text">{{ refreshing ? '' : 'Actualizar' }}</span>
       </button>
     </div>
     
     <div v-if="error" class="error-message">
       <div class="error-content">{{ error }}</div>
-      <button class="error-close" @click="clearError">×</button>
+      <button class="error-close" @click="clearError">
+        <span class="material-icons">close</span>
+      </button>
     </div>
     
     <div v-if="loading && !refreshing" class="loading-container">
@@ -111,6 +165,7 @@ onMounted(loadInstances);
     </div>
     
     <div v-else-if="instances.length === 0" class="empty-state">
+      <span class="material-icons empty-icon">cloud_off</span>
       <p>No se encontraron instancias disponibles.</p>
     </div>
     
@@ -129,38 +184,71 @@ onMounted(loadInstances);
 
 <style scoped>
 .instance-list-container {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  position: relative;
+  min-height: 200px;
+}
+
+.pull-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  overflow: hidden;
+  transition: height 0.2s;
+}
+
+.pull-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 8px;
+  transform: rotate(0deg);
+  transition: transform 0.2s;
+}
+
+.pull-spinner.is-refreshing {
+  animation: spin 1s linear infinite;
 }
 
 .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  padding: 0 4px;
 }
 
 .list-title {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
+  font-weight: 500;
   color: var(--color-text);
   margin: 0;
+  letter-spacing: 0.25px;
 }
 
 .refresh-button {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background-color: var(--color-background-alt);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 0.9rem;
-  color: var(--color-text);
+  gap: 4px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  padding: 8px;
+  color: var(--color-text-light);
   cursor: pointer;
   transition: all 0.2s;
+  min-width: 40px;
+  min-height: 40px;
 }
 
-.refresh-button:hover:not(:disabled) {
-  background-color: var(--color-background-dark);
+.refresh-button:active {
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .refresh-button:disabled {
@@ -168,13 +256,16 @@ onMounted(loadInstances);
   cursor: not-allowed;
 }
 
-.refresh-icon {
-  font-size: 1rem;
-  display: inline-block;
-  transition: transform 0.3s ease;
+.material-icons {
+  font-size: 20px;
 }
 
-.refresh-icon.is-refreshing {
+.button-text {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.is-refreshing {
   animation: spin 1s linear infinite;
 }
 
@@ -184,30 +275,37 @@ onMounted(loadInstances);
 }
 
 .error-message {
-  background-color: rgba(244, 67, 54, 0.2);
+  background-color: rgba(244, 67, 54, 0.1);
   color: var(--color-secondary-light);
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  font-size: 0.9rem;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border: 1px solid var(--color-secondary-dark);
+  border-left: 3px solid var(--color-secondary);
 }
 
 .error-content {
   flex: 1;
+  padding-right: 8px;
 }
 
 .error-close {
   background: none;
   border: none;
   color: var(--color-secondary-light);
-  font-size: 1.5rem;
   cursor: pointer;
-  padding: 0 8px;
-  margin: -8px;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-close .material-icons {
+  font-size: 16px;
 }
 
 .loading-container {
@@ -215,44 +313,48 @@ onMounted(loadInstances);
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 0;
+  padding: 32px 0;
   color: var(--color-text-light);
 }
 
 .loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top: 3px solid var(--color-primary-light);
+  width: 32px;
+  height: 32px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top: 2px solid var(--color-primary-light);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .empty-state {
-  text-align: center;
-  padding: 40px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 0;
   color: var(--color-text-light);
-  background-color: var(--color-background-alt);
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
 }
 
 .instance-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 
 @media (max-width: 600px) {
   .list-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    padding: 0;
   }
   
-  .refresh-button {
-    align-self: flex-end;
+  .list-title {
+    font-size: 1.1rem;
   }
 }
 </style>
