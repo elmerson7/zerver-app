@@ -49,6 +49,12 @@ app/src/main/assets/capacitor.config.json
 app/src/main/assets/capacitor.plugins.json
 app/src/main/res/xml/config.xml
 
+# Firebase
+android/app/google-services.json
+ios/App/GoogleService-Info.plist
+.firebase/
+firebase-debug.log
+
 # Archivos temporales
 .tmp
 .temp

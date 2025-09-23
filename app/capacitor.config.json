@@ -10,6 +10,12 @@
       "smallIcon": "ic_stat_icon",
       "iconColor": "#4CAF50",
       "sound": "beep.wav"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "FirebaseMessaging": {
+      "presentationOptions": ["badge", "sound", "alert"]
     }
   },
   "android": {

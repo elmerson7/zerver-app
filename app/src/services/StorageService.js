@@ -3,6 +3,7 @@ class StorageService {
     this.USER_ID_KEY = 'zerver_user_id';
     this.DEVICE_ID_KEY = 'zerver_device_id';
     this.SETTINGS_KEY = 'zerver_settings';
+    this.FCM_TOKEN_KEY = 'zerver_fcm_token';
   }
 
   // Generar un ID único para el usuario si no existe
@@ -36,8 +37,32 @@ class StorageService {
     return settings ? JSON.parse(settings) : {
       intervalMinutes: 30,
       graceMinutes: 2,
-      notificationsEnabled: true
+      notificationsEnabled: true,
+      useFCM: true,
+      fcmToken: null
     };
+  }
+
+  // Guardar token FCM
+  saveFCMToken(token) {
+    localStorage.setItem(this.FCM_TOKEN_KEY, token);
+    
+    // Actualizar también en la configuración
+    const settings = this.getSettings();
+    settings.fcmToken = token;
+    this.saveSettings(settings);
+  }
+
+  // Obtener token FCM
+  getFCMToken() {
+    // Primero intentar obtenerlo de la configuración
+    const settings = this.getSettings();
+    if (settings.fcmToken) {
+      return settings.fcmToken;
+    }
+    
+    // Si no está en la configuración, intentar obtenerlo del almacenamiento directo
+    return localStorage.getItem(this.FCM_TOKEN_KEY);
   }
 
   // Generar un ID único

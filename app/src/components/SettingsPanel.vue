@@ -1,21 +1,33 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { Capacitor } from '@capacitor/core';
 import StorageService from '../services/StorageService.js';
 import ApiService from '../services/ApiService.js';
 import PingService from '../services/PingService.js';
+import NotificationService from '../services/NotificationService.js';
 
 const settings = ref({
   intervalMinutes: 30,
   graceMinutes: 2,
-  notificationsEnabled: true
+  notificationsEnabled: true,
+  useFCM: true
 });
 
 const userId = ref('');
 const deviceId = ref('');
+const fcmToken = ref('');
 const isSaving = ref(false);
 const saveMessage = ref('');
+const isNativePlatform = ref(false);
+const fcmAvailable = ref(false);
 
-onMounted(() => {
+onMounted(async () => {
+  // Verificar si estamos en plataforma nativa
+  isNativePlatform.value = Capacitor.isNativePlatform();
+  
+  // Verificar si FCM está disponible
+  fcmAvailable.value = NotificationService.isFCMAvailable();
+  
   // Cargar configuración guardada
   const savedSettings = StorageService.getSettings();
   settings.value = { ...settings.value, ...savedSettings };
@@ -23,6 +35,13 @@ onMounted(() => {
   // Obtener IDs
   userId.value = StorageService.getUserId();
   deviceId.value = StorageService.getDeviceId();
+  
+  // Obtener token FCM
+  fcmToken.value = StorageService.getFCMToken() || 'No disponible';
+});
+
+const showFCMSettings = computed(() => {
+  return isNativePlatform.value;
 });
 
 const saveSettings = async () => {
@@ -37,7 +56,7 @@ const saveSettings = async () => {
     await ApiService.registerDevice({
       userId: userId.value,
       deviceId: deviceId.value,
-      fcmToken: 'local-notifications-only', // Placeholder para FCM futuro
+      fcmToken: fcmToken.value !== 'No disponible' ? fcmToken.value : 'local-notifications-only',
       intervalMinutes: settings.value.intervalMinutes,
       graceMinutes: settings.value.graceMinutes
     });
@@ -107,14 +126,36 @@ const toggleNotifications = () => {
             v-model="settings.notificationsEnabled"
             @change="toggleNotifications"
           >
-          <span>Notificaciones locales activadas</span>
+          <span>Notificaciones activadas</span>
         </label>
-        <p class="help-text">Activa o desactiva las notificaciones locales para confirmar el uso de instancias.</p>
+        <p class="help-text">Activa o desactiva las notificaciones para confirmar el uso de instancias.</p>
+      </div>
+      
+      <!-- Configuración de FCM solo para plataformas nativas -->
+      <div v-if="showFCMSettings" class="form-group">
+        <label class="checkbox-label">
+          <input 
+            type="checkbox" 
+            v-model="settings.useFCM"
+            :disabled="!fcmAvailable"
+          >
+          <span>Usar notificaciones push (FCM)</span>
+        </label>
+        <p class="help-text">
+          {{ fcmAvailable 
+            ? 'Permite recibir notificaciones incluso cuando la app está cerrada.' 
+            : 'FCM no está disponible en este dispositivo.' }}
+        </p>
+        
+        <div class="fcm-token-info">
+          <p><strong>Token FCM:</strong> {{ fcmToken }}</p>
+        </div>
       </div>
       
       <div class="device-info">
         <p><strong>ID de Usuario:</strong> {{ userId }}</p>
         <p><strong>ID de Dispositivo:</strong> {{ deviceId }}</p>
+        <p v-if="isNativePlatform"><strong>Plataforma:</strong> {{ Capacitor.getPlatform() }}</p>
       </div>
       
       <div class="form-actions">
@@ -218,6 +259,21 @@ select:focus {
 .checkbox-label input {
   width: 18px;
   height: 18px;
+}
+
+.checkbox-label input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fcm-token-info {
+  background-color: #f5f5f5;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 8px;
+  word-break: break-all;
 }
 
 .device-info {

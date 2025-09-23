@@ -1,44 +1,87 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
 import StorageService from './StorageService.js';
 import ApiService from './ApiService.js';
+import FCMService from './FCMService.js';
 
 class NotificationService {
   constructor() {
     this.notificationId = 1;
-    this.intervalId = null;
     this.initialized = false;
     this.activePings = new Map(); // Para almacenar los pings activos
+    this.actionsRegistered = false;
+    this.fcmAvailable = false;
   }
 
   async initialize() {
     if (this.initialized) return true;
 
     try {
-      // Solicitar permisos para notificaciones
+      // Inicializar FCM si estamos en plataforma nativa
+      if (Capacitor.isNativePlatform()) {
+        this.fcmAvailable = await FCMService.initialize();
+        console.log(`FCM ${this.fcmAvailable ? 'inicializado' : 'no disponible'}`);
+      }
+
+      // Inicializar notificaciones locales (siempre, como respaldo)
       const permissionStatus = await LocalNotifications.requestPermissions();
       
       if (permissionStatus.display !== 'granted') {
-        console.error('Permiso de notificaciones no concedido');
-        return false;
+        console.error('Permiso de notificaciones locales no concedido');
+        // Si FCM está disponible, podemos continuar aunque las notificaciones locales no estén permitidas
+        if (!this.fcmAvailable) {
+          return false;
+        }
       }
 
-      // Registrar listeners para eventos de notificaciones
+      // Registrar listeners para eventos de notificaciones locales
       LocalNotifications.addListener('localNotificationReceived', (notification) => {
-        console.log('Notificación recibida:', notification);
+        console.log('Notificación local recibida:', notification);
       });
 
       LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
-        console.log('Acción realizada en notificación:', notificationAction);
+        console.log('Acción realizada en notificación local:', notificationAction);
         
         // Procesar acciones de notificación
         this.handleNotificationAction(notificationAction);
       });
+
+      // Registrar acciones para notificaciones locales
+      await this.registerActionTypes();
 
       this.initialized = true;
       return true;
     } catch (error) {
       console.error('Error al inicializar notificaciones:', error);
       return false;
+    }
+  }
+
+  // Registrar tipos de acciones para notificaciones
+  async registerActionTypes() {
+    if (this.actionsRegistered) return;
+    
+    try {
+      await LocalNotifications.registerActionTypes({
+        types: [
+          {
+            id: 'EC2_ACTIONS',
+            actions: [
+              {
+                id: 'confirm',
+                title: 'Sigo usándola'
+              },
+              {
+                id: 'stop',
+                title: 'Puede apagarse'
+              }
+            ]
+          }
+        ]
+      });
+      this.actionsRegistered = true;
+    } catch (error) {
+      console.error('Error al registrar tipos de acciones:', error);
     }
   }
 
@@ -88,7 +131,18 @@ class NotificationService {
       const graceEndsAt = new Date(new Date().getTime() + graceMinutes * 60 * 1000);
       const formattedTime = this.formatTime(graceEndsAt);
       
-      // Crear notificación con acciones
+      const settings = StorageService.getSettings();
+      let notificationSent = false;
+      
+      // Si FCM está disponible y habilitado en la configuración, usarlo primero
+      if (this.fcmAvailable && settings.useFCM) {
+        // FCM se gestiona en el servidor, no necesitamos hacer nada aquí
+        // El token ya está registrado en el servidor
+        console.log('Notificación FCM será enviada por el servidor');
+        notificationSent = true;
+      }
+      
+      // Siempre enviar notificación local como respaldo
       await LocalNotifications.schedule({
         notifications: [
           {
@@ -106,36 +160,16 @@ class NotificationService {
           },
         ],
       });
+      notificationSent = true;
 
       // Registrar el ping activo
       this.activePings.set(pingKey, {
         instanceId,
+        instanceName,
         tickIso,
         graceEndsAt,
-        notificationSent: true
+        notificationSent
       });
-
-      // Registrar acciones de notificación (solo una vez)
-      if (!this.actionsRegistered) {
-        await LocalNotifications.registerActionTypes({
-          types: [
-            {
-              id: 'EC2_ACTIONS',
-              actions: [
-                {
-                  id: 'confirm',
-                  title: 'Sigo usándola'
-                },
-                {
-                  id: 'stop',
-                  title: 'Puede apagarse'
-                }
-              ]
-            }
-          ]
-        });
-        this.actionsRegistered = true;
-      }
 
       return true;
     } catch (error) {
@@ -162,6 +196,7 @@ class NotificationService {
       // Calcular tiempo restante en minutos
       const remainingMinutes = Math.ceil((graceEndsAtDate - now) / (60 * 1000));
       
+      // Los recordatorios siempre se envían como notificaciones locales
       await LocalNotifications.schedule({
         notifications: [
           {
@@ -240,6 +275,11 @@ class NotificationService {
       clearInterval(this.reminderIntervalId);
       this.reminderIntervalId = null;
     }
+  }
+
+  // Comprobar si FCM está disponible
+  isFCMAvailable() {
+    return this.fcmAvailable;
   }
 }
 
