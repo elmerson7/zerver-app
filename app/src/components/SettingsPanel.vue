@@ -178,9 +178,10 @@ const toggleNotifications = () => {
 
 <style scoped>
 .settings-panel {
-  background-color: #ffffff;
+  background-color: var(--color-card);
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
   padding: 20px;
   margin-bottom: 20px;
 }
@@ -188,8 +189,8 @@ const toggleNotifications = () => {
 .settings-title {
   font-size: 1.4rem;
   margin-bottom: 20px;
-  color: #333;
-  border-bottom: 1px solid #eee;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
   padding-bottom: 10px;
 }
 
@@ -207,13 +208,13 @@ const toggleNotifications = () => {
 
 .form-group label {
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   font-size: 0.95rem;
 }
 
 .help-text {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--color-text-light);
   margin-top: 4px;
 }
 
@@ -224,7 +225,7 @@ const toggleNotifications = () => {
 .select-wrapper::after {
   content: '▼';
   font-size: 0.8rem;
-  color: #666;
+  color: var(--color-text-light);
   position: absolute;
   right: 12px;
   top: 50%;
@@ -235,16 +236,17 @@ const toggleNotifications = () => {
 select {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 1rem;
-  background-color: #f9f9f9;
+  background-color: var(--color-background-alt);
+  color: var(--color-text);
   appearance: none;
   cursor: pointer;
 }
 
 select:focus {
-  border-color: #4CAF50;
+  border-color: var(--color-primary);
   outline: none;
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
@@ -254,11 +256,13 @@ select:focus {
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  color: var(--color-text);
 }
 
 .checkbox-label input {
   width: 18px;
   height: 18px;
+  accent-color: var(--color-primary);
 }
 
 .checkbox-label input:disabled {
@@ -267,22 +271,24 @@ select:focus {
 }
 
 .fcm-token-info {
-  background-color: #f5f5f5;
+  background-color: var(--color-background-dark);
   padding: 8px;
   border-radius: 6px;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--color-text-light);
   margin-top: 8px;
   word-break: break-all;
+  border: 1px solid var(--color-border);
 }
 
 .device-info {
-  background-color: #f5f5f5;
+  background-color: var(--color-background-dark);
   padding: 12px;
   border-radius: 8px;
   font-size: 0.9rem;
-  color: #666;
+  color: var(--color-text-light);
   margin-top: 10px;
+  border: 1px solid var(--color-border);
 }
 
 .device-info p {
@@ -297,7 +303,7 @@ select:focus {
 }
 
 .save-button {
-  background-color: #4CAF50;
+  background-color: var(--color-primary);
   color: white;
   border: none;
   border-radius: 8px;
@@ -311,11 +317,12 @@ select:focus {
 }
 
 .save-button:hover:not(:disabled) {
-  background-color: #3d9140;
+  background-color: var(--color-primary-dark);
 }
 
 .save-button:disabled {
-  background-color: #a5d6a7;
+  background-color: var(--color-primary-dark);
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
@@ -325,8 +332,8 @@ select:focus {
   border-radius: 4px;
   font-size: 0.9rem;
   text-align: center;
-  background-color: #e8f5e9;
-  color: #2e7d32;
+  background-color: rgba(76, 175, 80, 0.2);
+  color: var(--color-primary-light);
 }
 
 @media (max-width: 600px) {

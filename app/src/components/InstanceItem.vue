@@ -22,12 +22,12 @@ const handleAction = (action) => {
 const getStatusColor = (state) => {
   switch (state.toLowerCase()) {
     case 'running':
-      return '#4CAF50';
+      return 'var(--color-primary-light)';
     case 'stopped':
-      return '#F44336';
+      return 'var(--color-secondary-light)';
     case 'pending':
     case 'stopping':
-      return '#FF9800';
+      return 'var(--color-warning)';
     default:
       return '#9E9E9E';
   }
@@ -71,9 +71,10 @@ const getStatusColor = (state) => {
 
 <style scoped>
 .instance-item {
-  background-color: #ffffff;
+  background-color: var(--color-card);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
   padding: 16px;
   margin-bottom: 16px;
   display: flex;
@@ -94,19 +95,19 @@ const getStatusColor = (state) => {
   font-weight: 600;
   font-size: 1.1rem;
   margin-bottom: 4px;
-  color: #333;
+  color: var(--color-text);
 }
 
 .instance-id {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--color-text-light);
   font-family: monospace;
   margin-bottom: 4px;
 }
 
 .instance-region {
   font-size: 0.85rem;
-  color: #555;
+  color: var(--color-text-light);
   margin-bottom: 8px;
 }
 
@@ -151,21 +152,21 @@ const getStatusColor = (state) => {
 }
 
 .start-button {
-  background-color: #4CAF50;
+  background-color: var(--color-primary);
   color: white;
 }
 
 .start-button:hover:not(:disabled) {
-  background-color: #3d9140;
+  background-color: var(--color-primary-dark);
 }
 
 .stop-button {
-  background-color: #f44336;
+  background-color: var(--color-secondary);
   color: white;
 }
 
 .stop-button:hover:not(:disabled) {
-  background-color: #d32f2f;
+  background-color: var(--color-secondary-dark);
 }
 
 .action-button:disabled {
@@ -176,8 +177,8 @@ const getStatusColor = (state) => {
 .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-top: 2px solid #3498db;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top: 2px solid var(--color-primary-light);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-left: 10px;

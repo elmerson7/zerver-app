@@ -141,7 +141,7 @@ onMounted(loadInstances);
 
 .list-title {
   font-size: 1.4rem;
-  color: #333;
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -149,18 +149,18 @@ onMounted(loadInstances);
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: #f0f0f0;
-  border: none;
+  background-color: var(--color-background-alt);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--color-text);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .refresh-button:hover:not(:disabled) {
-  background-color: #e0e0e0;
+  background-color: var(--color-background-dark);
 }
 
 .refresh-button:disabled {
@@ -184,8 +184,8 @@ onMounted(loadInstances);
 }
 
 .error-message {
-  background-color: #ffebee;
-  color: #c62828;
+  background-color: rgba(244, 67, 54, 0.2);
+  color: var(--color-secondary-light);
   padding: 12px;
   border-radius: 8px;
   margin-bottom: 16px;
@@ -193,6 +193,7 @@ onMounted(loadInstances);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border: 1px solid var(--color-secondary-dark);
 }
 
 .error-content {
@@ -202,7 +203,7 @@ onMounted(loadInstances);
 .error-close {
   background: none;
   border: none;
-  color: #c62828;
+  color: var(--color-secondary-light);
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0 8px;
@@ -215,14 +216,14 @@ onMounted(loadInstances);
   align-items: center;
   justify-content: center;
   padding: 40px 0;
-  color: #666;
+  color: var(--color-text-light);
 }
 
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(0, 0, 0, 0.1);
-  border-top: 3px solid #3498db;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid var(--color-primary-light);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -231,9 +232,10 @@ onMounted(loadInstances);
 .empty-state {
   text-align: center;
   padding: 40px 0;
-  color: #666;
-  background-color: #f9f9f9;
+  color: var(--color-text-light);
+  background-color: var(--color-background-alt);
   border-radius: 8px;
+  border: 1px solid var(--color-border);
 }
 
 .instance-list {

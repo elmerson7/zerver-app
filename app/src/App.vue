@@ -128,46 +128,6 @@ const stopMonitoring = () => {
   </div>
 </template>
 
-<style>
-/* Estilos globales */
-:root {
-  --primary-color: #4CAF50;
-  --primary-dark: #3d9140;
-  --accent-color: #2196F3;
-  --error-color: #F44336;
-  --warning-color: #FF9800;
-  --text-primary: #333333;
-  --text-secondary: #666666;
-  --background-light: #f8f9fa;
-  --border-color: #eaeaea;
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  line-height: 1.6;
-  color: var(--text-primary);
-  background-color: #f5f5f5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-button {
-  font-family: inherit;
-}
-</style>
-
 <style scoped>
 .app-container {
   display: flex;
@@ -178,7 +138,7 @@ button {
 }
 
 .app-header {
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   padding: 1rem;
   box-shadow: var(--shadow-sm);
   display: flex;
@@ -199,7 +159,7 @@ button {
 }
 
 .monitoring-status {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.3);
   color: white;
   padding: 4px 12px;
   border-radius: 20px;
@@ -208,7 +168,7 @@ button {
 }
 
 .monitoring-status.active {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .app-content {
@@ -223,7 +183,7 @@ button {
 .tab-container {
   display: flex;
   margin-bottom: 20px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .tab-button {
@@ -233,7 +193,7 @@ button {
   border-bottom: 3px solid transparent;
   font-size: 1rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--color-text-light);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -242,8 +202,8 @@ button {
 }
 
 .tab-button.active {
-  color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
+  color: var(--color-primary-light);
+  border-bottom-color: var(--color-primary);
 }
 
 .tab-icon {
@@ -277,21 +237,21 @@ button {
 }
 
 .start-button {
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   color: white;
 }
 
 .start-button:hover {
-  background-color: var(--primary-dark);
+  background-color: var(--color-primary-dark);
 }
 
 .stop-button {
-  background-color: var(--error-color);
+  background-color: var(--color-secondary);
   color: white;
 }
 
 .stop-button:hover {
-  background-color: #d32f2f;
+  background-color: var(--color-secondary-dark);
 }
 
 .button-icon {
@@ -299,12 +259,12 @@ button {
 }
 
 .app-footer {
-  background-color: var(--background-light);
+  background-color: var(--color-background-alt);
   padding: 1rem;
   text-align: center;
   font-size: 0.9rem;
-  color: var(--text-secondary);
-  border-top: 1px solid var(--border-color);
+  color: var(--color-text-light);
+  border-top: 1px solid var(--color-border);
 }
 
 /* Responsive styles */
